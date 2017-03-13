@@ -1,87 +1,72 @@
 //
 // Created by halbg on 3/10/17.
 //
-#include <clocale>
 #include <iostream>
-#include <sstream>
 #include "../include/Tree.hpp"
+#include "../include/Option.hpp"
+#include "../include/Model.hpp"
+#include <math.h>
 
-Tree::Tree(Tree* l, Tree* r, double v, int d) : upSon(l), downSon(r), value(v), date(d)
+Tree::Tree(int depth) : depth(depth)
 {
-}
-
-Tree::Tree(double v, int d) : value(v), date(d)
-{
-    upSon = NULL;
-    downSon = NULL;
+    // Tridiagonal matrix of size N+1
+    data = (double*) malloc(((depth+1) * (depth+2)) / 2 * sizeof(double));
 }
 
 Tree::~Tree() {
-    if (this->upSon != NULL) {
-        this->upSon->~Tree();
-
-    }
-    if (this->downSon != NULL) {
-        this->downSon->~Tree();
-    }
+    free(data);
 }
 
-const int Tree::depth()
+const int Tree::getDepth()
 {
-    if (upSon == NULL) {
-        return 0;
-    } else {
-        return 1 + this->downSon->depth();
-    }
+    return depth;
 }
 
-const double Tree::getValue()
+const double* Tree::getData()
 {
-    return this->value;
+    return this->data;
 }
 
-const Tree* Tree::getUpSon() {
-    return this->upSon;
+const double Tree::get(const int line, const int column) {
+    return data[column + line*(line+1)/2];
 }
 
-const Tree* Tree::getDownSon() {
-    return this->downSon;
+void Tree::set(const int line, const int column, const double value) {
+    data[column + line*(line+1)/2] = value;
 }
 
-std::ostream& operator<<(std::ostream& os, const Tree& t)
+const void Tree::printTree(const int root_i, const int root_j)
 {
-    std::stringstream stringStream("");
-
-    stringStream << "(t=" << t.date << ", v=" << t.value << ")";
-
-    os << stringStream.str();
-
-    if (t.upSon != NULL) {
-        os << " -> " << *t.upSon << std::endl;
-    }
-    if (t.downSon != NULL) {
-        for (int i = 0; i < stringStream.str().size(); i++) {
-            os << " ";
+    for (int line = root_i; line <= root_i + depth; line++)
+    {
+        for (int column = root_j; column <= root_j + (line - root_i); column++)
+        {
+            std::cout << get(line, column) << " ";
         }
-        os << " -> " << *t.downSon << std::endl;
+        printf("\n");
     }
-    return os;
 }
 
-std::ostream& Tree::toStream(std::ostream& os, int lastSize) {
-    std::stringstream stringStream("");
-
-    stringStream << "-> (t=" << this->date << ", v=" << this->value << ") ";
-    os << stringStream.str();
-
-    if (this->upSon != NULL) {
-        os << this->upSon->toStream(os, lastSize + stringStream.str().size()) << std::endl;
+void Tree::fillLeaves(Option option, Model model) {
+    double spot = option.getSpot()*pow(model.getD(), depth);
+    for (int column = 0; column <= depth; column++) {
+        set(depth, column, option.payoff(spot));
+        spot *= model.getU()/model.getD();
     }
-    if (this->downSon != NULL) {
-        for (int i = 0; i < stringStream.str().size() + lastSize; i++) {
-            os << " ";
+}
+
+void Tree::solveCRR(const int root_i, const int root_j, Option option, Model model) {
+    double stock_root = option.getSpot() * pow(model.getD(), root_i - root_j) * pow(model.getU(), root_j);
+    for (int line = depth + root_i ; line >= root_i ; line--)
+    {
+        double stock = stock_root * pow(model.getD(), (line - root_i));
+        for (int column = root_j ; column <= (line - root_i) + root_j ; column++)
+        {
+            if (column > line) continue;
+            double value = fmax(option.payoff(stock),
+                                model.getDiscountFactor() * (model.getPu() * get(line + 1, column + 1) + model.getPd() * get(line + 1, column)));
+            set(line, column, value);
+            stock *= model.getU() / model.getD();
         }
-        os <<  this->downSon->toStream(os, lastSize + stringStream.str().size()) << std::endl;
     }
-    return os;
 }

@@ -48,3 +48,7 @@ const void Option::print()
     std::cout << "\tVolatility: " << sigma << std::endl;
     std::cout << "\tMaturity: " << T << std::endl;
 }
+
+const double Option::payoff(double spot) {
+    return K-spot > 0 ? K-spot : 0;
+}

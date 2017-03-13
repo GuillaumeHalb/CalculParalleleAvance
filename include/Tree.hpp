@@ -6,24 +6,24 @@
 #define ARBREBINOMIAL_TREE_H
 
 #include <iostream>
+#include "../include/Option.hpp"
+#include "../include/Model.hpp"
 
 class Tree {
 private:
-    Tree* upSon;
-    Tree* downSon;
-    double value;
-    int date;
+    int depth;
+    double *data; // array of double representing a matrix (matrix representing the tree)
 
 public:
-    Tree(Tree* l, Tree* r, double v, int d);
-    Tree(double v, int d);
+    Tree(int depth);
     ~Tree();
-    const int depth();
-    friend std::ostream& operator<<(std::ostream& os, const Tree& t);
-    const double getValue();
-    const Tree* getUpSon();
-    const Tree* getDownSon();
-    std::ostream& toStream(std::ostream& os, int lastSize);
+    const int getDepth();
+    const double* getData();
+    const double get(const int i, const int j);
+    void set(const int i, const int j, const double price);
+    const void printTree(const int root_i, const int root_j);
+    void fillLeaves(Option option, Model model);
+    void solveCRR(const int root_i, const int root_j, Option option, Model model);
 };
 
 

@@ -22,7 +22,7 @@ public:
     const double getVolatility();
     const double getMaturity();
     const void print();
-
+    const double payoff(double spot);
 };
 
 #endif //ARBREBINOMIAL_OPTION_H
