@@ -15,7 +15,7 @@ int main() {
     option.print();
 
     // Number of step
-    int N = 15;
+    int N = 7;
 
     Model model(option, N);
     model.print();

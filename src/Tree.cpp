@@ -62,11 +62,13 @@ void Tree::solveCRR(const int root_i, const int root_j, Option option, Model mod
         double stock = stock_root * pow(model.getD(), (line - root_i));
         for (int column = root_j ; column <= (line - root_i) + root_j ; column++)
         {
-            if (column > line) continue;
-            double value = fmax(option.payoff(stock),
-                                model.getDiscountFactor() * (model.getPu() * get(line + 1, column + 1) + model.getPd() * get(line + 1, column)));
-            set(line, column, value);
-            stock *= model.getU() / model.getD();
+            if (column <= line) {
+                double value = fmax(option.payoff(stock),
+                                    model.getDiscountFactor() * (model.getPu() * get(line + 1, column + 1) +
+                                                                 model.getPd() * get(line + 1, column)));
+                set(line, column, value);
+                stock *= model.getU() / model.getD();
+            }
         }
     }
 }
