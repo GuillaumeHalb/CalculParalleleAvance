@@ -1,8 +1,6 @@
 //
 // Created by lebitb on 3/14/17.
 //
-
-#include "tree_lib.hpp"
 #include "binomial.hpp"
 
 void initOption(std::vector<float> &Option) {
