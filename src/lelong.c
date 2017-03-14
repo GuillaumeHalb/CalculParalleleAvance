@@ -191,7 +191,7 @@ int main()
     double debut, fin;
     Model m;
 
-    N = 15;
+    N = 7;
 
     m.spot = 100;
     m.strike = 100;
