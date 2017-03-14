@@ -36,6 +36,32 @@ std::string kernelsource = "__kernel void binomial(                             
 "}                                                                                                      \n" \
 "\n";
 
+void initOption(std::vector<float> &Option, float X0, float K, float r, float sigma, float T) {
+    Option[0] = X0;
+    Option[1] = K;
+    Option[2] = r;
+    Option[3] = sigma;
+    Option[4] = T;
+}
+
+void initModel(std::vector<float> &Model, int Depth, float timeStep, float u, float d, float Pu, float Pd, float discountFactor) {
+    Model[0] = (float) Depth;
+    Model[1] = timeStep;
+    Model[2] = u;
+    Model[3] = d;
+    Model[4] = Pu;
+    Model[5] = Pd;
+    Model[6] = discountFactor;
+}
+
+void feelLeaves(std::vector<float> &Data, float X0, int Depth, float d, float u, float K) {
+    double spot = X0*pow(d, Depth);
+    for (int column = 0; column <= Depth; column++) {
+        Data[column + Depth*(Depth+1)/2] = K-spot > 0 ? K-spot : 0;
+        spot *= u/d;
+    }
+}
+
 int main(int argc, char *argv[])
 {
 
@@ -51,19 +77,70 @@ int main(int argc, char *argv[])
     std::vector<float> Model(7);
     std::vector<float> Data((Depth*(Depth+1))/2);
 
+    float X0 = 100;
+    float K = 100;
+    float r = 0.05;
+    float sigma = 0.2;
+    float T = 3;
+
+
+/*    Option[0] = X0;
+    Option[1] = K;
+    Option[2] = r;
+    Option[3] = sigma;
+    Option[4] = T;*/
+
+/*    for (int i = 0; i < 5; i++) {
+        std::cout << Option[i] << std::endl;
+    }*/
+
+    float timeStep = T/(float) Depth;
+    float u = exp(sigma*sqrt(timeStep));
+    float d = 1/u;
+    float Pu = (d-exp(r*timeStep))/(d-u);
+    float Pd = 1 - Pu;
+    float discountFactor = exp(-r*timeStep);
+
+
+
+/*    for (int i = 0; i < 7; i++) {
+        std::cout << Model[i] << std::endl;
+    }*/
+
+
+/*    for (int line = 0; line <= Depth; line++)
+    {
+        for (int column = 0; column <= line; column++)
+        {
+            std::cout << Data[column + line*(line+1)/2] << " ";
+        }
+        printf("\n");
+    }*/
+
     cl::Buffer d_Option ;
     cl::Buffer d_Model ;
     cl::Buffer d_Data ;
+
+    std::cout << "before try"<< std::endl;
 
     try {
 
 
         cl_uint deviceIndex = 0;
+
+        std::cout << "1"<< std::endl;
+
         parseArguments(argc, argv, &deviceIndex);
+
+        std::cout << "2"<< std::endl;
+
 
         // Get list of devices
         std::vector<cl::Device> devices;
+        std::cout << "3"<< std::endl;
+
         unsigned numDevices = getDeviceList(devices);
+        std::cout << "4"<< std::endl;
 
         // Check device index in range
         if (deviceIndex >= numDevices)
@@ -71,6 +148,8 @@ int main(int argc, char *argv[])
             std::cout << "Invalid device index (try '--list')\n";
             return EXIT_FAILURE;
         }
+
+        std::cout << "5"<< std::endl;
 
         cl::Device device = devices[deviceIndex];
 
@@ -83,6 +162,19 @@ int main(int argc, char *argv[])
         cl::Context context(chosen_device);
         cl::CommandQueue queue(context, device);
 
+std::cout << "initialisation vectors" << std::endl;
+
+        initOption(Option, X0, K, r, sigma, T);
+        initModel(Model, Depth, timeStep, u, d, Pu, Pd, discountFactor);
+        feelLeaves(Data, X0, Depth, d, u, K);
+
+        std::cout << "init buffer" << std::endl;
+
+        d_Option = cl::Buffer(context,Option.begin(),Option.end(),true);
+        d_Model = cl::Buffer(context,Model.begin(),Model.end(),true);
+        d_Data = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(float)*Depth*(Depth+1)/2);
+        std::cout << "fin init" << std::endl;
+
 
         std::cout << "Avant program" << std::endl;
         cl::Program program(context, kernelsource, true);
@@ -93,17 +185,11 @@ int main(int argc, char *argv[])
         std::cout << "apres kernel" << std::endl;
 
 
-        d_Option = cl::Buffer(context,Option.begin(),Option.end(),true);
-        d_Model = cl::Buffer(context,Model.begin(),Model.end(),true);
-        d_Data = cl::Buffer(context,Data.begin(),Data.end(),true);
-
-
         std::cout << "Avant NDRange" << std::endl;
         cl::NDRange global(Depth,Depth);
         binomial(cl::EnqueueArgs(queue,global),Depth,Root_i,Root_j,d_Option,d_Model,d_Data);
         queue.finish();
         cl::copy(queue,d_Data,Data.begin(),Data.end());
-
 
     }  catch ( cl::Error err)
     {
