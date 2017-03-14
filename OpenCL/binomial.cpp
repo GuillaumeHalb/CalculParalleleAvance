@@ -11,25 +11,22 @@ int main(int argc, char *argv[])
 
 
 	double start_time;      // Starting time
-        double run_time;        // Timing
-    	util::Timer timer;      // Timing
+    double run_time;        // Timing
+    util::Timer timer;      // Timing
 
-	float* Option;
-	float* Model;
-	float* Data;	
-
-	int Depth = 7; //default value
-	int Root_i, Root_j;
-	
-	Option = (float*)malloc(5*sizeof(float));
-	Model = (float*)malloc(7*sizeof(float));
-	Data = (float*)malloc(Depth*sizeof(float));
+    int Depth = 7; //default value
+    int Root_i, Root_j;
+    std::vector<float> Option(5);
+    std::vector<float> Model(7);
+    std::vector<float> Data((Depth*(Depth+1))/2);
 
 	cl::Buffer d_Option ;
 	cl::Buffer d_Model ;
 	cl::Buffer d_Data ;
 	
 	try {
+
+
 		cl_uint deviceIndex = 0;
         	parseArguments(argc, argv, &deviceIndex);
 
@@ -54,6 +51,22 @@ int main(int argc, char *argv[])
         	chosen_device.push_back(device);
         	cl::Context context(chosen_device);
         	cl::CommandQueue queue(context, device);
+        std::cout << "Avant program" << std::endl;
+            cl::Program program(context,util::loadProgram("binomial.cl"));
+        std::cout << "avant kernel" << std::endl;
+                  cl::make_kernel<int,int,int,cl::Buffer,cl::Buffer,cl::Buffer> binomial(program,"binomial");
+        std::cout << "apres kernel" << std::endl;
+                  d_Option = cl::Buffer(context,Option.begin(),Option.end(),true);
+        d_Model = cl::Buffer(context,Model.begin(),Model.end(),true);
+        d_Data = cl::Buffer(context,Data.begin(),Data.end(),true);
+
+        std::cout << "Avant NDRange" << std::endl;
+        cl::NDRange global(Depth,Depth);
+        binomial(cl::EnqueueArgs(queue,global),Depth,Root_i,Root_j,d_Option,d_Model,d_Data);
+        queue.finish();
+        cl::copy(queue,d_Data,Data.begin(),Data.end());
+
+
 
 	}  catch ( cl::Error err)
     {
