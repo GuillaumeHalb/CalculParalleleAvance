@@ -15,18 +15,20 @@
 #define __CL_ENABLE_EXCEPTIONS
 #include "cl.hpp"
 
+#include "tree_lib.hpp"
+
 extern double wtime();   // returns time since some fixed past point (wtime.c)
 
 // ----------------------------------------------------------------
 //  Constants
 // ----------------------------------------------------------------
-#define ORDER    1024    // Order of the square matrices A, B, and C
-#define AVAL     3.0     // A elements are constant and equal to AVAL
-#define BVAL     5.0     // B elements are constant and equal to BVAL
-#define TOL      (0.001) // tolerance used in floating point comparisons
-#define DIM      2       // Max dim for NDRange
-#define COUNT    1       // number of times to do each multiplication
+#define XO    100    // Order of the square matrices A, B, and C
+#define STRIKE     100     // A elements are constant and equal to AVAL
+#define RATE     0.05     // B elements are constant and equal to BVAL
+#define SIGMA      0.2 // tolerance used in floating point comparisons
+#define MATURITY      3       // Max dim for NDRange
 #define SUCCESS  1
 #define FAILURE  0
+#define DEPTH 7
 
 #endif //LAB1_SOURCES_BINOMIAL_H

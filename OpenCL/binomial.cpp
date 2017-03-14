@@ -36,32 +36,6 @@ std::string kernelsource = "__kernel void binomial(                             
 "}                                                                                                      \n" \
 "\n";
 
-void initOption(std::vector<float> &Option, float X0, float K, float r, float sigma, float T) {
-    Option[0] = X0;
-    Option[1] = K;
-    Option[2] = r;
-    Option[3] = sigma;
-    Option[4] = T;
-}
-
-void initModel(std::vector<float> &Model, int Depth, float timeStep, float u, float d, float Pu, float Pd, float discountFactor) {
-    Model[0] = (float) Depth;
-    Model[1] = timeStep;
-    Model[2] = u;
-    Model[3] = d;
-    Model[4] = Pu;
-    Model[5] = Pd;
-    Model[6] = discountFactor;
-}
-
-void feelLeaves(std::vector<float> &Data, float X0, int Depth, float d, float u, float K) {
-    double spot = X0*pow(d, Depth);
-    for (int column = 0; column <= Depth; column++) {
-        Data[column + Depth*(Depth+1)/2] = K-spot > 0 ? K-spot : 0;
-        spot *= u/d;
-    }
-}
-
 int main(int argc, char *argv[])
 {
 
@@ -71,17 +45,11 @@ int main(int argc, char *argv[])
     double run_time;        // Timing
     util::Timer timer;      // Timing
 
-    int Depth = 7; //default value
+    int Depth = DEPTH; //default value
     int Root_i, Root_j;
     std::vector<float> Option(5);
     std::vector<float> Model(7);
     std::vector<float> Data((Depth*(Depth+1))/2);
-
-    float X0 = 100;
-    float K = 100;
-    float r = 0.05;
-    float sigma = 0.2;
-    float T = 3;
 
 
 /*    Option[0] = X0;
@@ -94,12 +62,6 @@ int main(int argc, char *argv[])
         std::cout << Option[i] << std::endl;
     }*/
 
-    float timeStep = T/(float) Depth;
-    float u = exp(sigma*sqrt(timeStep));
-    float d = 1/u;
-    float Pu = (d-exp(r*timeStep))/(d-u);
-    float Pd = 1 - Pu;
-    float discountFactor = exp(-r*timeStep);
 
 
 
@@ -164,9 +126,9 @@ int main(int argc, char *argv[])
 
 std::cout << "initialisation vectors" << std::endl;
 
-        initOption(Option, X0, K, r, sigma, T);
-        initModel(Model, Depth, timeStep, u, d, Pu, Pd, discountFactor);
-        feelLeaves(Data, X0, Depth, d, u, K);
+        initOption(Option);
+        initModel(Model);
+        feelLeaves(Data);
 
         std::cout << "init buffer" << std::endl;
 
