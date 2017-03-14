@@ -3,20 +3,16 @@ ifndef CXX
 	CXX=g++
 endif
 
-CXX_COMMON = ../../CXX_common
+CXXFLAGS=-O3 -ffast-math
 
-CXXFLAGS=-std=c++11
+LIBS = -lm -lOpenCL
 
-INC = -I $(CXX_COMMON)
+COMMON_DIR = ../../CXX_common
 
-LIBS = -L/usr/lib64/nvidia -lOpenCL -lrt
+INC = -I $(COMMON_DIR)
 
-# Change this variable to specify the device type
-# to the OpenCL device type of choice. You can also
-# edit the variable in the source.
-ifndef DEVICE
-	DEVICE = CL_DEVICE_TYPE_DEFAULT
-endif
+BIN_OBJS = binomial.o wtime.o
+EXEC = binomial
 
 # Check our platform and make sure we define the APPLE variable
 # and set up the right compiler flags and libraries
@@ -24,14 +20,24 @@ PLATFORM = $(shell uname -s)
 ifeq ($(PLATFORM), Darwin)
 	CXX = clang++
 	CXXFLAGS += -stdlib=libc++
-	LIBS = -framework OpenCL
+	LIBS = -lm -framework OpenCL
 endif
 
-CXXFLAGS += -D DEVICE=$(DEVICE)
+all: $(EXEC)
 
-vadd: vadd.cpp
-	$(CXX) $^ $(INC) $(CXXFLAGS) $(LIBS) -o $@
+binomial: $(BIN_OBJS)
+	$(CXX) $(BIN_OBJS) $(CXXFLAGS) $(LIBS) -o $(EXEC)
+
+wtime.o: $(COMMON_DIR)/wtime.c
+	$(CXX) -c $^ $(CXXFLAGS) -o $@
+
+
+.c.o:
+	$(CXX) -c $< $(CXXFLAGS) -o $@
+
+.cpp.o:
+	$(CXX) -c $< $(CXXFLAGS) $(INC) -o $@
 
 
 clean:
-	rm -f vadd
+	rm -f $(BIN_OBJS) $(EXEC)
