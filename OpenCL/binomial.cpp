@@ -1,7 +1,14 @@
 #include "binomial.hpp"
+//includes for sequential version
+#include <iostream>
+#include "Option.hpp"
+#include "Tree.hpp"
+#include <sstream>
+//end sequential
 #include "util.hpp"
 #include <err_code.h>
 #include "device_picker.hpp"
+
 
 std::string kernelsource = "__kernel void binomial(                                                     \n" \
 "   const int depth,                                                                                 \n" \
@@ -47,62 +54,32 @@ int main(int argc, char *argv[])
 
     int Depth = DEPTH; //default value
     int Root_i, Root_j;
-    std::vector<float> Option(5);
-    std::vector<float> Model(7);
-    std::vector<float> Data((Depth*(Depth+1))/2);
-
-
-/*    Option[0] = X0;
-    Option[1] = K;
-    Option[2] = r;
-    Option[3] = sigma;
-    Option[4] = T;*/
-
-/*    for (int i = 0; i < 5; i++) {
-        std::cout << Option[i] << std::endl;
-    }*/
+    std::vector<float> Option_cl(5);
+    std::vector<float> Model_cl(7);
+    std::vector<float> Data(((Depth+1)*(Depth+2))/2);
 
 
 
 
-/*    for (int i = 0; i < 7; i++) {
-        std::cout << Model[i] << std::endl;
-    }*/
-
-
-/*    for (int line = 0; line <= Depth; line++)
-    {
-        for (int column = 0; column <= line; column++)
-        {
-            std::cout << Data[column + line*(line+1)/2] << " ";
-        }
-        printf("\n");
-    }*/
+    std::cout << "Avant Init" << std::endl;
+    printTree(Data);
 
     cl::Buffer d_Option ;
     cl::Buffer d_Model ;
     cl::Buffer d_Data ;
 
-    std::cout << "before try"<< std::endl;
 
     try {
 
 
         cl_uint deviceIndex = 0;
 
-        std::cout << "1"<< std::endl;
-
         parseArguments(argc, argv, &deviceIndex);
-
-        std::cout << "2"<< std::endl;
-
 
         // Get list of devices
         std::vector<cl::Device> devices;
-        std::cout << "3"<< std::endl;
 
         unsigned numDevices = getDeviceList(devices);
-        std::cout << "4"<< std::endl;
 
         // Check device index in range
         if (deviceIndex >= numDevices)
@@ -110,8 +87,6 @@ int main(int argc, char *argv[])
             std::cout << "Invalid device index (try '--list')\n";
             return EXIT_FAILURE;
         }
-
-        std::cout << "5"<< std::endl;
 
         cl::Device device = devices[deviceIndex];
 
@@ -124,34 +99,68 @@ int main(int argc, char *argv[])
         cl::Context context(chosen_device);
         cl::CommandQueue queue(context, device);
 
-std::cout << "initialisation vectors" << std::endl;
+        //************************************************************************************************
+        //Sequetial version
+        //************************************************************************************************
 
-        initOption(Option);
-        initModel(Model);
-        feelLeaves(Data);
+        timer.reset();
+        for (int i =0; i < COUNT; i++)
+        {
+            start_time = static_cast<double>(timer.getTimeMilliseconds()) / 1000.0;
+            Option option(static_cast<double>(XO), static_cast<double>(STRIKE), static_cast<double>(RATE),
+                          static_cast<double>(SIGMA), static_cast<double>(MATURITY));
+            option.print();
 
-        std::cout << "init buffer" << std::endl;
+            // Number of step
+            int N = (int)DEPTH;
 
-        d_Option = cl::Buffer(context,Option.begin(),Option.end(),true);
-        d_Model = cl::Buffer(context,Model.begin(),Model.end(),true);
-        d_Data = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(float)*Depth*(Depth+1)/2);
-        std::cout << "fin init" << std::endl;
+            Model model(option, N);
+            model.print();
 
+            // Creation de l'arbre du sujet
+            //int depth = 7;
+            Tree tree(N);
+            tree.fillLeaves(option, model);
+            std::cout << std::endl;
+            tree.printTree(0, 0);
+            tree.solveCRR(0, 0, option, model);
+            tree.printTree(0, 0);
 
-        std::cout << "Avant program" << std::endl;
+            run_time  = (static_cast<double>(timer.getTimeMilliseconds()) / 1000.0) - start_time;
+            results(Data,run_time);
+        }
+        //************************************************************************************************
+        //Parallel version
+        //************************************************************************************************
+
+        initOption(Option_cl);
+        initModel(Model_cl);
+        fillLeaves(Data);
+
+        std::cout << "apres init" << std::endl;
+        printTree(Data);
+
+        d_Option = cl::Buffer(context,Option_cl.begin(),Option_cl.end(),true);
+        d_Model = cl::Buffer(context,Model_cl.begin(),Model_cl.end(),true);
+        d_Data = cl::Buffer(context, Data.begin(), Data.end(), false );
+
         cl::Program program(context, kernelsource, true);
 
-
-        std::cout << "avant kernel" << std::endl;
         cl::make_kernel<int,int,int,cl::Buffer,cl::Buffer,cl::Buffer> binomial(program,"binomial");
-        std::cout << "apres kernel" << std::endl;
 
 
-        std::cout << "Avant NDRange" << std::endl;
-        cl::NDRange global(Depth,Depth);
-        binomial(cl::EnqueueArgs(queue,global),Depth,Root_i,Root_j,d_Option,d_Model,d_Data);
-        queue.finish();
-        cl::copy(queue,d_Data,Data.begin(),Data.end());
+        for(int i =0; i < COUNT; i++)
+        {
+            start_time = static_cast<double>(timer.getTimeMilliseconds()) / 1000.0;
+            cl::NDRange global(Depth,Depth);
+            binomial(cl::EnqueueArgs(queue,global),Depth,Root_i,Root_j,d_Option,d_Model,d_Data);
+            queue.finish();
+            cl::copy(queue,d_Data,Data.begin(),Data.end());
+
+            printTree(Data);
+            run_time  = (static_cast<double>(timer.getTimeMilliseconds()) / 1000.0) - start_time;
+            results(Data,run_time);
+        }
 
     }  catch ( cl::Error err)
     {

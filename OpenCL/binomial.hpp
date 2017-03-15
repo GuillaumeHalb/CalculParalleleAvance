@@ -22,13 +22,14 @@ extern double wtime();   // returns time since some fixed past point (wtime.c)
 // ----------------------------------------------------------------
 //  Constants
 // ----------------------------------------------------------------
-#define XO    100    // Order of the square matrices A, B, and C
-#define STRIKE     100     // A elements are constant and equal to AVAL
-#define RATE     0.05     // B elements are constant and equal to BVAL
-#define SIGMA      0.2 // tolerance used in floating point comparisons
-#define MATURITY      3       // Max dim for NDRange
+#define XO    100.0
+#define STRIKE     100.0
+#define RATE     0.05
+#define SIGMA      0.2
+#define MATURITY      3.0
 #define SUCCESS  1
 #define FAILURE  0
-#define DEPTH 7
+#define DEPTH 40.0
+#define COUNT 1
 
 #endif //LAB1_SOURCES_BINOMIAL_H

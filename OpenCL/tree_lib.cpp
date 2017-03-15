@@ -21,10 +21,34 @@ void initModel(std::vector<float> &Model) {
     Model[6] = exp(-RATE * Model[1]);
 }
 
-void feelLeaves(std::vector<float> &Data) {
-double spot = XO*pow(exp(-SIGMA*sqrt(MATURITY/(float)DEPTH)), DEPTH);
-    for (int column = 0; column <= DEPTH; column++) {
-        Data[column + DEPTH*(DEPTH+1)/2] = STRIKE-spot > 0 ? STRIKE-spot : 0;
-        spot *= exp(2*SIGMA*sqrt(MATURITY/(float)DEPTH));
+void fillLeaves(std::vector<float> &Data) {
+    float spot = XO * pow(exp(-SIGMA * sqrt(MATURITY/DEPTH)), (int)DEPTH);
+    for (int column = 0; column <= (int)DEPTH; column++) {
+        Data[column + (int)(DEPTH*(DEPTH+1)/2)] = STRIKE-spot > 0.0 ? STRIKE-spot : 0.0;
+        spot *= exp(2*SIGMA*sqrt(MATURITY/DEPTH));
     }
+}
+
+void printTree(std::vector<float> &Data) {
+    for (int line = 0; line <= DEPTH; line++)
+    {
+        for (int column = 0; column <= line; column++)
+        {
+            std::cout << Data[column + line*(line+1)/2] << " ";
+        }
+        printf("\n");
+    }
+}
+
+void results( std::vector<float>& Data, double run_time)
+{
+
+    float mflops;
+    //float errsq;
+
+    mflops = 2.0 * DEPTH * DEPTH * DEPTH/(1000000.0f * run_time);
+    printf(" %.2f seconds at %.1f MFLOPS \n",  run_time,mflops);
+    //errsq = error(N, C);
+    //if (std::isnan(errsq) || errsq > TOL)
+    //    printf("\n Errors in multiplication: %f\n",errsq);
 }

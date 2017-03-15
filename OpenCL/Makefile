@@ -11,7 +11,7 @@ COMMON_DIR = ../../CXX_common
 
 INC = -I $(COMMON_DIR)
 
-BIN_OBJS = binomial.o tree_lib.o wtime.o
+BIN_OBJS = binomial.o tree_lib.o Option.o Tree.o Model.o wtime.o
 EXEC = binomial
 
 # Check our platform and make sure we define the APPLE variable
@@ -38,9 +38,11 @@ wtime.o: $(COMMON_DIR)/wtime.c
 .cpp.o:
 	$(CXX) -c $< $(CXXFLAGS) $(INC) -o $@
 
-binomial.o: binomial.hpp tree_lib.hpp
+binomial.o: binomial.hpp tree_lib.hpp Option.hpp Tree.hpp
 
 tree_lib.o: binomial.hpp
+
+Tree.o: Option.hpp Model.hpp
 
 clean:
 	rm -f $(BIN_OBJS) $(EXEC)
