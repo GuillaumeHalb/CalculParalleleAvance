@@ -18,9 +18,11 @@ std::string kernelsource = "__kernel void binomial(                             
 "   __global float* model,                                                                              \n" \
 "   __global float* data)                                                                               \n" \
 "{                                                                                                      \n" \
+"       root_j = get_global_id(1);                                                              \n" \
+"       root_i = get_global_id(0);                                                              \n" \
 "       float stock_root = option[0] * pow(model[3], root_i - root_j) * pow(model[2], root_j);  \n" \
-"       int line = get_global_id(0);                                                            \n" \
-"       int column = get_global_id(1);                                                          \n" \
+"       int line;                                                            \n" \
+"       int column;                                                          \n" \
 "                                                                                                       \n" \
 "       for (line = depth + root_i ; line >= root_i ; line--)                                           \n" \
 "       {                                                                                               \n" \
@@ -59,63 +61,6 @@ int main(int argc, char *argv[])
     std::vector<float> Data(((Depth+1)*(Depth+2))/2);
 
 
-    //************************************************************************************************
-    //Sequetial version
-    //************************************************************************************************
-
-    timer.reset();
-    for (int i =0; i < COUNT; i++)
-    {
-        start_time = static_cast<double>(timer.getTimeMilliseconds()) / 1000.0;
-        Option option(static_cast<double>(XO), static_cast<double>(STRIKE), static_cast<double>(RATE),
-                      static_cast<double>(SIGMA), static_cast<double>(MATURITY));
-        option.print();
-
-        // Number of step
-        int N = (int)DEPTH;
-
-        Model model(option, N);
-        model.print();
-
-        // Creation de l'arbre du sujet
-        Tree tree(N);
-        tree.fillLeaves(option, model);
-        std::cout << "Initialisation séquentielle des feuilles" << std::endl;
-        tree.printTree(0, 0);
-        tree.solveCRR(0, 0, option, model);
-        std::cout << "CRR séquentielle" << std::endl;
-        tree.printTree(0, 0);
-
-        run_time  = (static_cast<double>(timer.getTimeMilliseconds()) / 1000.0) - start_time;
-        results(Data,run_time);
-    }
-
-    //************************************************************************************************
-    //Sequetial version upsidedown
-    //************************************************************************************************
-    Option option(static_cast<double>(XO), static_cast<double>(STRIKE), static_cast<double>(RATE),
-                  static_cast<double>(SIGMA), static_cast<double>(MATURITY));
-    option.print();
-
-    // Number of step
-    int N = (int)DEPTH;
-    Model model(option, N);
-    model.print();
-    Tree tree(N);
-    tree.fillLeaves(option, model);
-    std::cout << "Initialisation séquentielle des feuilles" << std::endl;
-    tree.printTree(0, 0);
-    tree.solveCRRUpsidedown(0, 0, option, model);
-    std::cout << "CRR upside down séquentielle" << std::endl;
-    tree.printTree(0, 0);
-
-    //*****************************************************************************************************
-    //*****************************************************************************************************
-    //*****************************************************************************************************
-/*
-    std::cout << "Avant Init" << std::endl;
-    printTree(Data);*/
-
     cl::Buffer d_Option ;
     cl::Buffer d_Model ;
     cl::Buffer d_Data ;
@@ -123,6 +68,38 @@ int main(int argc, char *argv[])
 
     try {
 
+
+        //************************************************************************************************
+        //Sequetial version
+        //************************************************************************************************
+
+
+        timer.reset();
+        for (int i =0; i < COUNT; i++)
+        {
+            start_time = static_cast<double>(timer.getTimeMilliseconds()) / 1000.0;
+            Option option(static_cast<double>(XO), static_cast<double>(STRIKE), static_cast<double>(RATE),
+                          static_cast<double>(SIGMA), static_cast<double>(MATURITY));
+            option.print();
+
+            // Number of step
+            int N = (int)DEPTH;
+
+            Model model(option, N);
+            model.print();
+
+            // Creation de l'arbre du sujet
+            Tree tree(N);
+            tree.fillLeaves(option, model);
+            std::cout << "Initialisation séquentielle des feuilles" << std::endl;
+            tree.printTree(0, 0);
+            tree.solveCRR(option, model);
+            std::cout << "CRR séquentielle" << std::endl;
+            tree.printTree(0, 0);
+
+            run_time  = (static_cast<double>(timer.getTimeMilliseconds()) / 1000.0) - start_time;
+            results(Data,run_time);
+        }
 
         cl_uint deviceIndex = 0;
 

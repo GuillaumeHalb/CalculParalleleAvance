@@ -61,17 +61,17 @@ void Tree::fillLeaves(Option option, Model model) {
             set(line, column, 0);
 }
 
-void Tree::solveCRR(const int root_i, const int root_j, Option option, Model model) {
-    std::cout << "solve CRR" << std::endl;
+
+void Tree::solveCRR(const int root_i, const int root_j, const int size, Option option, Model model) {
+    std::cout << "solveCRR: (" << root_i << ", " << root_j << ")"  << std::endl;
+
     double stock_root = option.getSpot() * pow(model.getD(), root_i - root_j) * pow(model.getU(), root_j);
-    std::cout << "Stock_root: " << stock_root << std::endl;
-    for (int line = depth + root_i ; line >= root_i ; line--)
+    for (int line = size + root_i ; line >= root_i ; line--)
     {
         double stock = stock_root * pow(model.getD(), (line - root_i));
-        std::cout << "Stock: " << stock << std::endl;
         for (int column = root_j ; column <= (line - root_i) + root_j ; column++)
         {
-            if (column <= line) {
+            if (column <= line  && line < depth) {
                 double value = fmax(option.payoff(stock),
                                     model.getDiscountFactor() * (model.getPu() * get(line + 1, column + 1) +
                                                                  model.getPd() * get(line + 1, column)));
@@ -82,16 +82,22 @@ void Tree::solveCRR(const int root_i, const int root_j, Option option, Model mod
     }
 }
 
-void Tree::solveCRRUpsidedown(const int root_i, const int root_j, Option option, Model model)
+void Tree::solveCRR(Option option, Model model)
 {
+    solveCRR(0, 0, depth, option, model);
+}
+
+void Tree::solveCRRUpsidedown(const int root_i, const int root_j, const int size, Option option, Model model)
+{
+    std::cout << "solveCRR upsidedown: (" << root_i << ", " << root_j << ")"  << std::endl;
     double stock_root = option.getSpot() * pow(model.getD(), root_i - root_j) * pow(model.getU(), root_j);
-    for (int line = root_i ; line >= root_i - depth ; line--)
+    for (int line = root_i ; line >= root_i - size ; line--)
     {
         double stock = stock_root / pow(model.getU(), (root_i - line));
         for (int column = root_j - (root_i - line) ; column <= root_j ; column++) {
-            if (column <= line) {
+            if (column <= line && column >= 0) {
                 double value = fmax(option.payoff(stock), model.getDiscountFactor() * (model.getPu() * get(line + 1, column + 1)
-                                                                 + model.getPd() * get(line + 1, column)));
+                                                                                       + model.getPd() * get(line + 1, column)));
                 set(line, column, value);
                 stock *= model.getU() / model.getD();
             }

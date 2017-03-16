@@ -16,7 +16,7 @@ int main() {
     option.print();
 
     // Number of step
-    int N = 3;
+    int N = 20;
 
     Model model(option, N);
     model.print();
@@ -33,29 +33,25 @@ int main() {
     std::cout << std::endl;
 
     tree.fillLeaves(option, model);
-    tree.solveCRR(2, 0, N, option, model);
-    tree.printTree(0, 0);
-    std::cout << std::endl;
-
-    tree.fillLeaves(option, model);
-    std::cout << std::endl;
-    tree.solveCRR(2, 2, N, option, model);
-    tree.printTree(0, 0);
-    std::cout << std::endl;
-
-    tree.fillLeaves(option, model);
-    tree.solveCRR(2, 2, N, option, model);
-    tree.solveCRR(2, 0, N, option, model);
-    tree.printTree(0, 0);
-    std::cout << std::endl;
-
-    tree.solveCRRUpsidedown(2, 1, 1, option, model);
-    tree.printTree(0, 0);
-    std::cout << std::endl;
-
-    tree.fillLeaves(option, model);
-    tree.solveCRRUpsidedown(N, N-1, N, option, model);
-    tree.printTree(0, 0);
+    int rooti = N/2 + 1;
+    int rootj = rooti;
+    int size = N - rooti;
+    tree.solveCRR(rooti, 0, size, option, model);
+    std::cout << "sous arbre1" << std::endl;
+    tree.printTree(0,0);
+    tree.solveCRR(rooti, rootj, size, option, model);
+    std::cout << "sous arbre2" << std::endl;
+    tree.printTree(0,0);
+    if (N % 2 == 1) {
+        tree.solveCRRUpsidedown(N - 1, rootj - 1, size, option, model);
+    } else {
+        tree.solveCRRUpsidedown(N, rootj - 1, size + 1, option, model);
+    }
+    std::cout << "sous arbre inversé" << std::endl;
+    tree.printTree(0,0);
+    std::cout << "total" << std::endl;
+    tree.solveCRR(0,0, N - rooti, option, model);
+    tree.printTree(0,0);
 
     return 0;
 }

@@ -71,7 +71,7 @@ void Tree::solveCRR(const int root_i, const int root_j, const int size, Option o
                 double value = fmax(option.payoff(stock),
                                     model.getDiscountFactor() * (model.getPu() * get(line + 1, column + 1) +
                                                                  model.getPd() * get(line + 1, column)));
-                std::cout << "(" << line << ", " << column << ", value: " << value << ")" << std::endl;
+                //std::cout << "(" << line << ", " << column << ", value: " << value << ")" << std::endl;
                 set(line, column, value);
                 stock *= model.getU() / model.getD();
             }
@@ -92,12 +92,10 @@ void Tree::solveCRRUpsidedown(const int root_i, const int root_j, const int size
     {
         double stock = stock_root / pow(model.getU(), (root_i - line));
         for (int column = root_j - (root_i - line) ; column <= root_j ; column++) {
-            std::cout << "(" << line << ", " << column << ")" << std::endl;
-            if (column <= line) {
-
+            if (column <= line && column >= 0) {
                 double value = fmax(option.payoff(stock), model.getDiscountFactor() * (model.getPu() * get(line + 1, column + 1)
                                                                  + model.getPd() * get(line + 1, column)));
-                std::cout << "(" << line << ", " << column << ", value: " << value << ")" << std::endl;
+               // std::cout << "(" << line << ", " << column << ", value: " << value << ")" << std::endl;
                 set(line, column, value);
                 stock *= model.getU() / model.getD();
             }
