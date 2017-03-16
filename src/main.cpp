@@ -2,6 +2,7 @@
 #include "../include/Option.hpp"
 #include "../include/Tree.hpp"
 #include <sstream>
+#include <X11/Xlib.h>
 
 int main() {
     std::cout << "Hello, World!" << std::endl;
@@ -15,18 +16,45 @@ int main() {
     option.print();
 
     // Number of step
-    int N = 7;
+    int N = 3;
 
     Model model(option, N);
     model.print();
 
     // Creation de l'arbre du sujet
-    //int depth = 7;
     Tree tree(N);
     tree.fillLeaves(option, model);
     std::cout << std::endl;
     tree.printTree(0, 0);
-    tree.solveCRR(0, 0, option, model);
+    std::cout << std::endl;
+
+    tree.solveCRR(option, model);
+    tree.printTree(0, 0);
+    std::cout << std::endl;
+
+    tree.fillLeaves(option, model);
+    tree.solveCRR(2, 0, N, option, model);
+    tree.printTree(0, 0);
+    std::cout << std::endl;
+
+    tree.fillLeaves(option, model);
+    std::cout << std::endl;
+    tree.solveCRR(2, 2, N, option, model);
+    tree.printTree(0, 0);
+    std::cout << std::endl;
+
+    tree.fillLeaves(option, model);
+    tree.solveCRR(2, 2, N, option, model);
+    tree.solveCRR(2, 0, N, option, model);
+    tree.printTree(0, 0);
+    std::cout << std::endl;
+
+    tree.solveCRRUpsidedown(2, 1, 1, option, model);
+    tree.printTree(0, 0);
+    std::cout << std::endl;
+
+    tree.fillLeaves(option, model);
+    tree.solveCRRUpsidedown(N, N-1, N, option, model);
     tree.printTree(0, 0);
 
     return 0;

@@ -23,7 +23,9 @@ public:
     void set(const int i, const int j, const double price);
     const void printTree(const int root_i, const int root_j);
     void fillLeaves(Option option, Model model);
-    void solveCRR(const int root_i, const int root_j, Option option, Model model);
+    void solveCRR(const int root_i, const int root_j, const int size, Option option, Model model);
+    void solveCRR(Option option, Model model);
+    void solveCRRUpsidedown(const int root_i, const int root_j, const int size, Option option, Model model);
 };
 
 

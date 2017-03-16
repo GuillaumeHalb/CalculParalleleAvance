@@ -55,19 +55,43 @@ void Tree::fillLeaves(Option option, Model model) {
         set(depth, column, option.payoff(spot));
         spot *= model.getU()/model.getD();
     }
+    // Normalement pas utile parce qu'on écrase ensuite les valeurs
+    for (int line=0; line < depth; line++)
+        for (int column = 0; column <= line; column++)
+            set(line, column, 0);
 }
 
 void Tree::solveCRR(const int root_i, const int root_j, Option option, Model model) {
+    std::cout << "solve CRR" << std::endl;
     double stock_root = option.getSpot() * pow(model.getD(), root_i - root_j) * pow(model.getU(), root_j);
+    std::cout << "Stock_root: " << stock_root << std::endl;
     for (int line = depth + root_i ; line >= root_i ; line--)
     {
         double stock = stock_root * pow(model.getD(), (line - root_i));
+        std::cout << "Stock: " << stock << std::endl;
         for (int column = root_j ; column <= (line - root_i) + root_j ; column++)
         {
             if (column <= line) {
                 double value = fmax(option.payoff(stock),
                                     model.getDiscountFactor() * (model.getPu() * get(line + 1, column + 1) +
                                                                  model.getPd() * get(line + 1, column)));
+                set(line, column, value);
+                stock *= model.getU() / model.getD();
+            }
+        }
+    }
+}
+
+void Tree::solveCRRUpsidedown(const int root_i, const int root_j, Option option, Model model)
+{
+    double stock_root = option.getSpot() * pow(model.getD(), root_i - root_j) * pow(model.getU(), root_j);
+    for (int line = root_i ; line >= root_i - depth ; line--)
+    {
+        double stock = stock_root / pow(model.getU(), (root_i - line));
+        for (int column = root_j - (root_i - line) ; column <= root_j ; column++) {
+            if (column <= line) {
+                double value = fmax(option.payoff(stock), model.getDiscountFactor() * (model.getPu() * get(line + 1, column + 1)
+                                                                 + model.getPd() * get(line + 1, column)));
                 set(line, column, value);
                 stock *= model.getU() / model.getD();
             }

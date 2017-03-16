@@ -67,4 +67,5 @@ const void Model::print() {
     std::cout << "\td : " << d << std::endl;
     std::cout << "\tPu : " << Pu << std::endl;
     std::cout << "\tPd : " << Pd << std::endl;
+    std::cout << "\tdiscountFactor : " << discountFactor << std::endl;
 }

@@ -59,10 +59,62 @@ int main(int argc, char *argv[])
     std::vector<float> Data(((Depth+1)*(Depth+2))/2);
 
 
+    //************************************************************************************************
+    //Sequetial version
+    //************************************************************************************************
 
+    timer.reset();
+    for (int i =0; i < COUNT; i++)
+    {
+        start_time = static_cast<double>(timer.getTimeMilliseconds()) / 1000.0;
+        Option option(static_cast<double>(XO), static_cast<double>(STRIKE), static_cast<double>(RATE),
+                      static_cast<double>(SIGMA), static_cast<double>(MATURITY));
+        option.print();
 
+        // Number of step
+        int N = (int)DEPTH;
+
+        Model model(option, N);
+        model.print();
+
+        // Creation de l'arbre du sujet
+        Tree tree(N);
+        tree.fillLeaves(option, model);
+        std::cout << "Initialisation séquentielle des feuilles" << std::endl;
+        tree.printTree(0, 0);
+        tree.solveCRR(0, 0, option, model);
+        std::cout << "CRR séquentielle" << std::endl;
+        tree.printTree(0, 0);
+
+        run_time  = (static_cast<double>(timer.getTimeMilliseconds()) / 1000.0) - start_time;
+        results(Data,run_time);
+    }
+
+    //************************************************************************************************
+    //Sequetial version upsidedown
+    //************************************************************************************************
+    Option option(static_cast<double>(XO), static_cast<double>(STRIKE), static_cast<double>(RATE),
+                  static_cast<double>(SIGMA), static_cast<double>(MATURITY));
+    option.print();
+
+    // Number of step
+    int N = (int)DEPTH;
+    Model model(option, N);
+    model.print();
+    Tree tree(N);
+    tree.fillLeaves(option, model);
+    std::cout << "Initialisation séquentielle des feuilles" << std::endl;
+    tree.printTree(0, 0);
+    tree.solveCRRUpsidedown(0, 0, option, model);
+    std::cout << "CRR upside down séquentielle" << std::endl;
+    tree.printTree(0, 0);
+
+    //*****************************************************************************************************
+    //*****************************************************************************************************
+    //*****************************************************************************************************
+/*
     std::cout << "Avant Init" << std::endl;
-    printTree(Data);
+    printTree(Data);*/
 
     cl::Buffer d_Option ;
     cl::Buffer d_Model ;
@@ -99,36 +151,7 @@ int main(int argc, char *argv[])
         cl::Context context(chosen_device);
         cl::CommandQueue queue(context, device);
 
-        //************************************************************************************************
-        //Sequetial version
-        //************************************************************************************************
 
-        timer.reset();
-        for (int i =0; i < COUNT; i++)
-        {
-            start_time = static_cast<double>(timer.getTimeMilliseconds()) / 1000.0;
-            Option option(static_cast<double>(XO), static_cast<double>(STRIKE), static_cast<double>(RATE),
-                          static_cast<double>(SIGMA), static_cast<double>(MATURITY));
-            option.print();
-
-            // Number of step
-            int N = (int)DEPTH;
-
-            Model model(option, N);
-            model.print();
-
-            // Creation de l'arbre du sujet
-            //int depth = 7;
-            Tree tree(N);
-            tree.fillLeaves(option, model);
-            std::cout << std::endl;
-            tree.printTree(0, 0);
-            tree.solveCRR(0, 0, option, model);
-            tree.printTree(0, 0);
-
-            run_time  = (static_cast<double>(timer.getTimeMilliseconds()) / 1000.0) - start_time;
-            results(Data,run_time);
-        }
         //************************************************************************************************
         //Parallel version
         //************************************************************************************************
@@ -137,7 +160,7 @@ int main(int argc, char *argv[])
         initModel(Model_cl);
         fillLeaves(Data);
 
-        std::cout << "apres init" << std::endl;
+        std::cout << "Initialisation parallele des feuilles" << std::endl;
         printTree(Data);
 
         d_Option = cl::Buffer(context,Option_cl.begin(),Option_cl.end(),true);
@@ -156,7 +179,7 @@ int main(int argc, char *argv[])
             binomial(cl::EnqueueArgs(queue,global),Depth,Root_i,Root_j,d_Option,d_Model,d_Data);
             queue.finish();
             cl::copy(queue,d_Data,Data.begin(),Data.end());
-
+            std::cout << "CRR parallele" << std::endl;
             printTree(Data);
             run_time  = (static_cast<double>(timer.getTimeMilliseconds()) / 1000.0) - start_time;
             results(Data,run_time);

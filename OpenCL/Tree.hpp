@@ -24,6 +24,7 @@ public:
     const void printTree(const int root_i, const int root_j);
     void fillLeaves(Option option, Model model);
     void solveCRR(const int root_i, const int root_j, Option option, Model model);
+    void solveCRRUpsidedown(const int root_i, const int root_j, Option option, Model model);
 };
 
 

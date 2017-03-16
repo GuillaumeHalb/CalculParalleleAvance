@@ -215,9 +215,16 @@ int main()
     /* Backward induction */
     //debut = omp_get_wtime();
     solve_crr_tree(P, N - 1, 0, 0, &m);
+    DO_PRINT(print_tree(P, N, 0, 0));
    // fin = omp_get_wtime();
    // printf("price at time 0: %f \n", GET(P, 0, 0));
    // printf("Computation time: %f\n", fin - debut);
+
+    double *P2;
+    P2 = malloc(((N + 1) * (N + 2)) / 2 * sizeof(double));
+    fill_leaves(P2, N, &m);
+    solve_crr_tree_upsidedown(P2, N - 1, 0, 0, &m);
+    DO_PRINT(print_tree(P, N, 0, 0));
 
     printf("Spot %f\n", m.spot);
     printf("Strike %f\n", m.strike);
@@ -236,5 +243,6 @@ int main()
 
 
     free(P);
+    free(P2);
     exit(0);
 }
