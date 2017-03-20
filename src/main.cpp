@@ -16,7 +16,7 @@ int main() {
     option.print();
 
     // Number of step
-    int N = 20;
+    int N = 21;
 
     Model model(option, N);
     model.print();
@@ -33,25 +33,41 @@ int main() {
     std::cout << std::endl;
 
     tree.fillLeaves(option, model);
-    int rooti = N/2 + 1;
-    int rootj = rooti;
-    int size = N - rooti;
-    tree.solveCRR(rooti, 0, size, option, model);
-    std::cout << "sous arbre1" << std::endl;
-    tree.printTree(0,0);
-    tree.solveCRR(rooti, rootj, size, option, model);
-    std::cout << "sous arbre2" << std::endl;
-    tree.printTree(0,0);
+
     if (N % 2 == 1) {
+        int rooti = N/2 + 1;
+        int rootj = rooti;
+        int size = N - rooti;
+        tree.solveCRR(rooti, 0, size, option, model);
+        std::cout << "sous arbre1" << std::endl;
+        tree.printTree(0,0);
+        tree.solveCRR(rooti, rootj, size, option, model);
+        std::cout << "sous arbre2" << std::endl;
+        tree.printTree(0,0);
         tree.solveCRRUpsidedown(N - 1, rootj - 1, size, option, model);
+        std::cout << "sous arbre inversé" << std::endl;
+        tree.printTree(0,0);
+        std::cout << "total" << std::endl;
+        tree.solveCRR(0,0, N - rooti, option, model);
+        tree.printTree(0,0);
     } else {
+        int rooti = N/2;
+        int rootj = rooti;
+        int size = N - rooti;
+        tree.solveCRR(rooti, 0, size, option, model);
+        std::cout << "sous arbre1" << std::endl;
+        tree.printTree(0,0);
+        tree.solveCRR(rooti, rootj, size, option, model);
+        std::cout << "sous arbre2" << std::endl;
+        tree.printTree(0,0);
         tree.solveCRRUpsidedown(N, rootj - 1, size + 1, option, model);
+        std::cout << "sous arbre inversé" << std::endl;
+        tree.printTree(0,0);
+        std::cout << "total" << std::endl;
+        tree.solveCRR(0,0, N - rooti, option, model);
+        tree.printTree(0,0);
     }
-    std::cout << "sous arbre inversé" << std::endl;
-    tree.printTree(0,0);
-    std::cout << "total" << std::endl;
-    tree.solveCRR(0,0, N - rooti, option, model);
-    tree.printTree(0,0);
+
 
     return 0;
 }

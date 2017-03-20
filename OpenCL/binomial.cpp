@@ -18,11 +18,11 @@ std::string kernelsource = "__kernel void binomial(                             
 "   __global float* model,                                                                              \n" \
 "   __global float* data)                                                                               \n" \
 "{                                                                                                      \n" \
-"       root_j = get_global_id(1);                                                              \n" \
-"       root_i = get_global_id(0);                                                              \n" \
+/*"       root_j = get_global_id(1);                                                              \n" \
+"       root_i = get_global_id(0);                                                              \n" \*/
 "       float stock_root = option[0] * pow(model[3], root_i - root_j) * pow(model[2], root_j);  \n" \
 "       int line;                                                            \n" \
-"       int column;                                                          \n" \
+"       int column ;                                                          \n" \
 "                                                                                                       \n" \
 "       for (line = depth + root_i ; line >= root_i ; line--)                                           \n" \
 "       {                                                                                               \n" \
@@ -55,16 +55,16 @@ int main(int argc, char *argv[])
     util::Timer timer;      // Timing
 
     int Depth = DEPTH; //default value
-    int Root_i, Root_j;
+    int Root_i = 0, Root_j = 0;
     std::vector<float> Option_cl(5);
     std::vector<float> Model_cl(7);
     std::vector<float> Data(((Depth+1)*(Depth+2))/2);
-
+    std::string debug = "";
 
     cl::Buffer d_Option ;
     cl::Buffer d_Model ;
     cl::Buffer d_Data ;
-
+    cl::Buffer d_Debug ;
 
     try {
 
@@ -137,23 +137,27 @@ int main(int argc, char *argv[])
         initModel(Model_cl);
         fillLeaves(Data);
 
-        std::cout << "Initialisation parallele des feuilles" << std::endl;
-        printTree(Data);
-
         d_Option = cl::Buffer(context,Option_cl.begin(),Option_cl.end(),true);
         d_Model = cl::Buffer(context,Model_cl.begin(),Model_cl.end(),true);
         d_Data = cl::Buffer(context, Data.begin(), Data.end(), false );
 
-        cl::Program program(context, kernelsource, true);
+        cl::Program program(context, util::loadProgram("binomial.cl"), true);
 
-        cl::make_kernel<int,int,int,cl::Buffer,cl::Buffer,cl::Buffer> binomial(program,"binomial");
+        cl::make_kernel<cl::Buffer,cl::Buffer,cl::Buffer,int> binomial(program,"binomial");
 
 
         for(int i =0; i < COUNT; i++)
         {
             start_time = static_cast<double>(timer.getTimeMilliseconds()) / 1000.0;
-            cl::NDRange global(Depth,Depth);
-            binomial(cl::EnqueueArgs(queue,global),Depth,Root_i,Root_j,d_Option,d_Model,d_Data);
+
+            cl::NDRange global(Depth, Depth);
+
+
+            binomial(cl::EnqueueArgs(queue,global),d_Option,d_Model,d_Data, Depth);
+
+
+
+
             queue.finish();
             cl::copy(queue,d_Data,Data.begin(),Data.end());
             std::cout << "CRR parallele" << std::endl;
