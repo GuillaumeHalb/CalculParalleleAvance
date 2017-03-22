@@ -75,31 +75,34 @@ int main(int argc, char *argv[])
 
 
         timer.reset();
+        start_time = static_cast<double>(timer.getTimeMilliseconds()) / 1000.0;
         for (int i =0; i < COUNT; i++)
         {
-            start_time = static_cast<double>(timer.getTimeMilliseconds()) / 1000.0;
+
             Option option(static_cast<double>(XO), static_cast<double>(STRIKE), static_cast<double>(RATE),
                           static_cast<double>(SIGMA), static_cast<double>(MATURITY));
-            option.print();
+            //option.print();
 
             // Number of step
             int N = (int)DEPTH;
 
             Model model(option, N);
-            model.print();
+            //model.print();
 
             // Creation de l'arbre du sujet
             Tree tree(N);
             tree.fillLeaves(option, model);
-            std::cout << "Initialisation séquentielle des feuilles" << std::endl;
-            tree.printTree(0, 0);
-            tree.solveCRR(option, model);
-            std::cout << "CRR séquentielle" << std::endl;
-            tree.printTree(0, 0);
+            //std::cout << "Initialisation séquentielle des feuilles" << std::endl;
+            //tree.printTree(0, 0);
 
-            run_time  = (static_cast<double>(timer.getTimeMilliseconds()) / 1000.0) - start_time;
-            results(Data,run_time);
+
+            tree.solveCRR(option, model);
+           // std::cout << "CRR séquentielle" << std::endl;
+            //tree.printTree(0, 0);
+
         }
+        run_time  = (static_cast<double>(timer.getTimeMilliseconds()) / 1000.0) - start_time;
+        results(Data,run_time);
 
         cl_uint deviceIndex = 0;
 
@@ -143,28 +146,54 @@ int main(int argc, char *argv[])
 
         cl::Program program(context, util::loadProgram("binomial.cl"), true);
 
-        cl::make_kernel<cl::Buffer,cl::Buffer,cl::Buffer,int> binomial(program,"binomial");
+        cl::make_kernel<cl::Buffer,cl::Buffer,cl::Buffer,int,int,int,int> binomial(program,"binomial");
 
 
+        start_time = static_cast<double>(timer.getTimeMilliseconds()) / 1000.0;
         for(int i =0; i < COUNT; i++)
         {
-            start_time = static_cast<double>(timer.getTimeMilliseconds()) / 1000.0;
-
-            cl::NDRange global(Depth, Depth);
-
-
-            binomial(cl::EnqueueArgs(queue,global),d_Option,d_Model,d_Data, Depth);
 
 
 
+            //Setting variables
+            int size = 0;
+            int root_i = 0;
+
+            if (Depth % 2 ==1) {
+                size = Depth - ((int) Depth / 2 + 1);
+                root_i = Depth/2 + 1;
+            }
+            else {
+                size = Depth - ((int) Depth / 2);
+                root_i = Depth/2;
+            }
+
+            int global_size = size*(size+1)/2;
+
+            //Upright tree solve
+            cl::NDRange global(2*size, size);
+            cl::NDRange local(size, size);
+
+            binomial(cl::EnqueueArgs(queue,global, local),d_Option,d_Model,d_Data, Depth, size,root_i,0);
+
+            //Variables for UpsideDown tree solve
+            root_i = (root_i - 1)*2;
+            int sizeU = size - (Depth - root_i);
+
+            //UpsideDown tree solve
+            binomial(cl::EnqueueArgs(queue,global, local),d_Option,d_Model,d_Data, Depth, sizeU,root_i,1);
+
+            cl::NDRange global2(2*(size+1), size+1);
+            cl::NDRange local2(size + 1, size + 1);
+            binomial(cl::EnqueueArgs(queue,global2, local2),d_Option,d_Model,d_Data, Depth, size,0,2);
 
             queue.finish();
             cl::copy(queue,d_Data,Data.begin(),Data.end());
-            std::cout << "CRR parallele" << std::endl;
-            printTree(Data);
-            run_time  = (static_cast<double>(timer.getTimeMilliseconds()) / 1000.0) - start_time;
-            results(Data,run_time);
+            //std::cout << "CRR parallele" << std::endl;
+            //printTree(Data);
         }
+        run_time  = (static_cast<double>(timer.getTimeMilliseconds()) / 1000.0) - start_time;
+        results(Data,run_time);
 
     }  catch ( cl::Error err)
     {

@@ -63,20 +63,20 @@ void Tree::fillLeaves(Option option, Model model) {
 
 
 void Tree::solveCRR(const int root_i, const int root_j, const int size, Option option, Model model) {
-    std::cout << "solveCRR: (" << root_i << ", " << root_j << ")"  << std::endl;
-
-    double stock_root = option.getSpot() * pow(model.getD(), root_i - root_j) * pow(model.getU(), root_j);
+    //double stock_root = option.getSpot() * pow(model.getD(), root_i - root_j) * pow(model.getU(), root_j);
     for (int line = size + root_i ; line >= root_i ; line--)
     {
-        double stock = stock_root * pow(model.getD(), (line - root_i));
+//        double stock = stock_root * pow(model.getD(), (line - root_i));
         for (int column = root_j ; column <= (line - root_i) + root_j ; column++)
         {
             if (column <= line  && line < depth) {
-                double value = fmax(option.payoff(stock),
-                                    model.getDiscountFactor() * (model.getPu() * get(line + 1, column + 1) +
-                                                                 model.getPd() * get(line + 1, column)));
+                double stock = option.getSpot() * pow(model.getD(), line - column) * pow(model.getU(), column);
+                double payoff = option.payoff(stock);
+                double v = model.getDiscountFactor() * (model.getPu() * get(line + 1, column + 1)
+                                                        + model.getPd() * get(line + 1, column));
+                double value = fmax(payoff, v);
                 set(line, column, value);
-                stock *= model.getU() / model.getD();
+                //stock *= model.getU() / model.getD();
             }
         }
     }
@@ -89,7 +89,6 @@ void Tree::solveCRR(Option option, Model model)
 
 void Tree::solveCRRUpsidedown(const int root_i, const int root_j, const int size, Option option, Model model)
 {
-    std::cout << "solveCRR upsidedown: (" << root_i << ", " << root_j << ")"  << std::endl;
     double stock_root = option.getSpot() * pow(model.getD(), root_i - root_j) * pow(model.getU(), root_j);
     for (int line = root_i ; line >= root_i - size ; line--)
     {

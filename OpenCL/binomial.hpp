@@ -29,7 +29,7 @@ extern double wtime();   // returns time since some fixed past point (wtime.c)
 #define MATURITY      3.0
 #define SUCCESS  1
 #define FAILURE  0
-#define DEPTH 21.0
-#define COUNT 1
+#define DEPTH 50.0
+#define COUNT 1000
 
 #endif //LAB1_SOURCES_BINOMIAL_H

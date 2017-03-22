@@ -68,6 +68,12 @@ int main() {
         tree.printTree(0,0);
     }
 
+    int depth = N;
+
+
+
+
+
 
     return 0;
 }
